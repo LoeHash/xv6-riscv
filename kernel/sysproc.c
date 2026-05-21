@@ -107,3 +107,27 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+// sleep.
+uint64 sys_sleep(void)
+{
+  uint64 now_tick = sys_uptime();
+  if (now_tick < 0)
+  {
+    return 1;
+  }
+
+  uint64 time_to_sleep = 0;
+  //1: register
+  //2: ptr
+  // copy the data from user space 
+  // to the kernel space.
+  argaddr(0, &time_to_sleep);
+
+  while (sys_uptime() <= (now_tick + time_to_sleep))
+  {
+    yield();
+  }
+
+  return 0;
+}
