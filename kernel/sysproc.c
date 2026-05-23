@@ -108,7 +108,7 @@ sys_uptime(void)
   return xticks;
 }
 
-// sleep.
+
 uint64 sys_sleep(void)
 {
   uint64 now_tick = sys_uptime();
@@ -130,4 +130,9 @@ uint64 sys_sleep(void)
   }
 
   return 0;
+}
+
+uint64 sys_getcwd(void)
+{
+  return kgetcwd();
 }

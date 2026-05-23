@@ -5,6 +5,9 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 
 struct cpu cpus[NCPU];
 
@@ -148,6 +151,8 @@ found:
 
   return p;
 }
+
+
 
 // free a proc structure and the data hanging from it,
 // including user pages.
@@ -303,6 +308,13 @@ kfork(void)
   release(&np->lock);
 
   return pid;
+}
+
+uint64 kgetcwd()
+{
+  struct proc *p = myproc();
+  struct inode *cur_inode = p->cwd;
+  return (uint64)cur_inode->ref;
 }
 
 // Pass p's abandoned children to init.
@@ -688,3 +700,4 @@ procdump(void)
     printf("\n");
   }
 }
+

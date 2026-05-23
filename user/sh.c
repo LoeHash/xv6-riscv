@@ -159,10 +159,17 @@ main(void)
   // Read and run input commands.
   while(getcmd(buf, sizeof(buf)) >= 0){
     char *cmd = buf;
-    while (*cmd == ' ' || *cmd == '\t')
+    
+    while (*cmd == ' ' || *cmd == '\t'){
+      //清除输入的头部空格
       cmd++;
-    if (*cmd == '\n') // is a blank command
-      continue;
+    }
+      
+    if (*cmd == '\n'){
+      continue; // is a blank command
+    } 
+      
+
     if(cmd[0] == 'c' && cmd[1] == 'd' && cmd[2] == ' '){
       // Chdir must be called by the parent, not the child.
       cmd[strlen(cmd)-1] = 0;  // chop \n
@@ -170,7 +177,10 @@ main(void)
         fprintf(2, "cannot cd %s\n", cmd+3);
     } else {
       if(fork1() == 0)
+
         runcmd(parsecmd(cmd));
+
+      // father to wait child.
       wait(0);
     }
   }
@@ -330,8 +340,7 @@ struct cmd *parsepipe(char**, char*);
 struct cmd *parseexec(char**, char*);
 struct cmd *nulterminate(struct cmd*);
 
-struct cmd*
-parsecmd(char *s)
+struct cmd* parsecmd(char *s)
 {
   char *es;
   struct cmd *cmd;

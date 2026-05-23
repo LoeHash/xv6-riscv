@@ -146,7 +146,9 @@ UPROGS=\
 	$U/_forphan\
 	$U/_dorphan\
 	$U/_sleep\
-	$U/_pingpo
+	$U/_pingpo\
+	$U/_pwd\
+	$U/_prime\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
