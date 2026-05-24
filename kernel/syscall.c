@@ -100,6 +100,7 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_sleep(void);
 extern uint64 sys_getcwd(void);
+extern uint64 sys_trace(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -126,7 +127,10 @@ static uint64 (*syscalls[])(void) = {
     [SYS_mkdir] sys_mkdir,
     [SYS_close] sys_close,
     [SYS_sleep] sys_sleep,
-    [SYS_getcwd] sys_getcwd};
+    [SYS_getcwd] sys_getcwd,
+    [SYS_trace] sys_trace,
+
+};
 
 void syscall(void)
 {
@@ -139,6 +143,11 @@ void syscall(void)
                 // Use num to lookup the system call function for num, call it,
                 // and store its return value in p->trapframe->a0
                 p->trapframe->a0 = syscalls[num]();
+                // printf("\n   %d   \n", p->traced_system_call);
+                if (p->traced_system_call && num == p->traced_system_call)
+                {
+                        printf("[%d] systemcall: %d, the result: %ld\n", p->pid, p->traced_system_call, p->trapframe->a0);
+                }
         }
         else
         {

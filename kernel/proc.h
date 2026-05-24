@@ -113,4 +113,7 @@ struct proc
         struct file *ofile[NOFILE];  // Open files
         struct inode *cwd;           // Current directory
         char name[16];               // Process name (debugging)
+
+        // the traced system call
+        int traced_system_call;
 };

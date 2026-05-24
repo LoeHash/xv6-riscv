@@ -20,6 +20,7 @@ int main(void)
                 mknod("console", CONSOLE, 0);
                 open("console", O_RDWR);
         }
+
         dup(0); // stdout
         dup(0); // stderr
 
@@ -57,6 +58,7 @@ int main(void)
                         else
                         {
                                 // it was a parentless process; do nothing.
+                                printf("\nthe [%d] has no parent.\n", wpid);
                         }
                 }
         }

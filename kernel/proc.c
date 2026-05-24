@@ -124,6 +124,7 @@ allocproc(void)
                         release(&p->lock);
                 }
         }
+
         return 0;
 
 found:
@@ -152,6 +153,7 @@ found:
         memset(&p->context, 0, sizeof(p->context));
         p->context.ra = (uint64)forkret;
         p->context.sp = p->kstack + PGSIZE;
+        p->traced_system_call = 0;
 
         return p;
 }
@@ -226,15 +228,22 @@ void proc_freepagetable(pagetable_t pagetable, uint64 sz)
 // Set up first user process.
 void userinit(void)
 {
+        // 定义proc结构体
         struct proc *p;
 
+        // 分配进程空间
         p = allocproc();
+
+        // 设置为第一进程
         initproc = p;
 
+        // 设置当前的工作目录
         p->cwd = namei("/");
 
+        // 设置运行状态
         p->state = RUNNABLE;
 
+        // 释放当前锁
         release(&p->lock);
 }
 
@@ -303,6 +312,8 @@ int kfork(void)
         safestrcpy(np->name, p->name, sizeof(p->name));
 
         pid = np->pid;
+
+        np->traced_system_call = p->traced_system_call;
 
         release(&np->lock);
 
@@ -543,6 +554,8 @@ void forkret(void)
                 // File system initialization must be run in the context of a
                 // regular process (e.g., because it calls sleep), and thus cannot
                 // be run from main().
+                // fs文件系统的初始化工作全部被推迟到第一个线程
+
                 fsinit(ROOTDEV);
 
                 first = 0;

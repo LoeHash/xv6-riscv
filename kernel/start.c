@@ -44,6 +44,7 @@ void start()
         w_tp(id);
 
         // switch to supervisor mode and jump to main().
+        // cpu 降级(监管) 准备执行main
         asm volatile("mret");
 }
 

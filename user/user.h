@@ -27,6 +27,7 @@ int pause(int);
 int uptime(void);
 int sleep(long);
 int getcwd(void);
+int trace(long);
 
 // ulib.c
 int stat(const char *, struct stat *);

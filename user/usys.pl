@@ -44,3 +44,4 @@ entry("pause");
 entry("uptime");
 entry("sleep");
 entry("getcwd");
+entry("trace");

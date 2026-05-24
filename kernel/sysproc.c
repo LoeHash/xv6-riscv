@@ -141,3 +141,13 @@ uint64 sys_getcwd(void)
 {
         return kgetcwd();
 }
+
+uint64 sys_trace(void)
+{
+        int sys_call_code;
+        argint(0, &sys_call_code);
+
+        myproc()->traced_system_call = sys_call_code;
+
+        return 0;
+}

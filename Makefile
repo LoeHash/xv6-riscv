@@ -149,6 +149,8 @@ UPROGS=\
 	$U/_pingpo\
 	$U/_pwd\
 	$U/_prime\
+	$U/_zombie_plus\
+	$U/_trace\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

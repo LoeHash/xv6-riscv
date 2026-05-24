@@ -22,3 +22,4 @@
 #define SYS_close 21
 #define SYS_sleep 22
 #define SYS_getcwd 22
+#define SYS_trace 23
