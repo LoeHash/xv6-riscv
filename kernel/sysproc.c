@@ -6,6 +6,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
+#include "sysinfo.h"
 
 uint64
 sys_exit(void)
@@ -148,6 +149,22 @@ uint64 sys_trace(void)
         argint(0, &sys_call_code);
 
         myproc()->traced_system_call = sys_call_code;
+
+        return 0;
+}
+
+uint64 sys_sysinfo()
+{
+        uint64 info_addr = 0;
+
+        argaddr(0, &info_addr);
+
+        struct sysinfo_struct info;
+
+        info.free_memory = kget_free_mem_size();
+        info.processes = cpupcount();
+
+        copyout(myproc()->pagetable, info_addr, (char *)&info, sizeof(info));
 
         return 0;
 }

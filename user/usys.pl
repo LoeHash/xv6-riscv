@@ -45,3 +45,4 @@ entry("uptime");
 entry("sleep");
 entry("getcwd");
 entry("trace");
+entry("sysinfo");

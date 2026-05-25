@@ -733,3 +733,19 @@ void procdump(void)
                 printf("\n");
         }
 }
+
+// return the number of unused process
+int cpupcount(void)
+{
+        struct proc *p;
+        int unused_process_count = 0;
+        for (p = proc; p < &proc[NPROC]; p++)
+        {
+                if (p->state == UNUSED)
+                {
+                        unused_process_count++;
+                }
+        }
+
+        return unused_process_count;
+}

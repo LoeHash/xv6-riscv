@@ -20,6 +20,8 @@
 #define SYS_link 19
 #define SYS_mkdir 20
 #define SYS_close 21
+//=================
 #define SYS_sleep 22
 #define SYS_getcwd 22
 #define SYS_trace 23
+#define SYS_sysinfo 24

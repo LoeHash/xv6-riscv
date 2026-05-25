@@ -71,6 +71,8 @@ kalloc(void)
 
         acquire(&kmem.lock);
         r = kmem.freelist;
+
+        // 反过来的链表
         if (r)
                 kmem.freelist = r->next;
         release(&kmem.lock);
@@ -79,3 +81,23 @@ kalloc(void)
                 memset((char *)r, 5, PGSIZE); // fill with junk
         return (void *)r;
 }
+
+uint64 kget_free_mem_size(void)
+{
+
+        // kmem 是内存页
+        // 它永远指向最后一个可用的内存页
+        struct run *r = kmem.freelist;
+
+        uint64 page_count = 0;
+
+        while (r)
+        {
+                page_count++;
+                r = r->next;
+        }
+
+        return page_count * PGSIZE;
+}
+// 133185536
+// 133185536

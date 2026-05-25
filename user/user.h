@@ -1,6 +1,7 @@
 #define SBRK_ERROR ((char *)-1)
 
 struct stat;
+struct sysinfo_struct;
 
 // system calls
 // here is for the user lib to use
@@ -28,6 +29,7 @@ int uptime(void);
 int sleep(long);
 int getcwd(void);
 int trace(long);
+int sysinfo(struct sysinfo_struct *);
 
 // ulib.c
 int stat(const char *, struct stat *);
