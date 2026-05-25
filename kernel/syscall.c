@@ -147,7 +147,7 @@ void syscall(void)
                 // and store its return value in p->trapframe->a0
                 p->trapframe->a0 = syscalls[num]();
 
-                if (p->traced_system_call && num == p->traced_system_call)
+                if (p->traced_system_call == -1 || num == p->traced_system_call)
                 {
                         printf("[%d] systemcall: %d, the result: %ld\n", p->pid, p->traced_system_call, p->trapframe->a0);
                 }
