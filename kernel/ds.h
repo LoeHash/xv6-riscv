@@ -7,4 +7,9 @@ struct sysinfo_struct
         uint64 free_memory;
         uint64 processes;
 };
+
+struct usyscall
+{
+        uint64 pid;
+};
 #endif

@@ -8,6 +8,7 @@
 #include "sleeplock.h"
 #include "fs.h"
 #include "file.h"
+#include "ds.h"
 
 struct cpu cpus[NCPU];
 
@@ -158,6 +159,22 @@ found:
         return p;
 }
 
+int _create_proc_usyscall(pagetable_t pgtb, struct proc *p)
+{
+        // 在此创建一个usyscall
+        // 并将进程信息写入, 同时建立虚拟内存于此的映射
+        // 占用4096bytes
+        struct usyscall *usc;
+        usc = kalloc();
+        usc->pid = p->pid;
+        // 在虚拟空间中映射
+        if (mappages(pgtb, USYSCALL, PGSIZE, (uint64)usc, PTE_R | PTE_U) != 0)
+        {
+                return -1;
+        }
+        return 0;
+}
+
 // free a proc structure and the data hanging from it,
 // including user pages.
 // p->lock must be held.
@@ -213,6 +230,14 @@ proc_pagetable(struct proc *p)
                 return 0;
         }
 
+        // 加速syscall
+        if (_create_proc_usyscall(pagetable, p) != 0)
+        {
+                uvmunmap(pagetable, USYSCALL, 1, 0);
+                uvmfree(pagetable, 0);
+                return 0;
+        }
+
         return pagetable;
 }
 
@@ -222,6 +247,7 @@ void proc_freepagetable(pagetable_t pagetable, uint64 sz)
 {
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmunmap(pagetable, TRAPFRAME, 1, 0);
+        uvmunmap(pagetable, USYSCALL, 1, 0);
         uvmfree(pagetable, sz);
 }
 
@@ -242,7 +268,6 @@ void userinit(void)
 
         // 设置运行状态
         p->state = RUNNABLE;
-
         // 释放当前锁
         release(&p->lock);
 }
