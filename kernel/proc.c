@@ -186,8 +186,7 @@ uint64 _get_usc_cache_pa_ptr(struct proc *p)
                 return (uint64)-1;
         }
 
-        // get pa
-        return PTE2PA(*pte) | (USYSCALL & 0xfff);
+        return PTE2PA(*pte);
 }
 
 // free a proc structure and the data hanging from it,

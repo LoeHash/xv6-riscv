@@ -155,6 +155,7 @@ UPROGS=\
 	$U/_sysinfotest\
 	$U/_getpid\
 	$U/_getppid\
+	$U/_pgaccess\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

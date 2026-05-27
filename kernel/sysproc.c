@@ -168,3 +168,25 @@ uint64 sys_sysinfo()
 
         return 0;
 }
+
+// 检测被访问的page
+uint64 sys_pgaccess()
+{
+        // start: start va
+        // pg_count: the number to check
+        // res : return back
+        uint64 start, pg_count, res, tmp;
+
+        argaddr(0, &start);
+        argaddr(1, &pg_count);
+        argaddr(2, &res);
+
+        if (pgaccess(myproc()->pagetable, start, pg_count, &tmp) != 0)
+        {
+                return -1;
+        }
+
+        copyout(myproc()->pagetable, res, (char *)&(tmp), 8);
+
+        return 0;
+}

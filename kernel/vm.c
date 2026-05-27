@@ -552,3 +552,38 @@ int ismapped(pagetable_t pagetable, uint64 va)
         }
         return 0;
 }
+
+// before call this func
+int pgaccess(pagetable_t pgtbl, uint64 s_va, uint64 count, uint64 *res)
+{
+        if (s_va >= MAXVA)
+        {
+                return -1;
+        }
+
+        // reset res.
+        *res = 0;
+
+        pte_t *start;
+        for (int i = 0; i < count; i++)
+        {
+                // printf()
+                start = walk(pgtbl, s_va + i * PGSIZE, 0);
+
+                if (start == 0)
+                {
+                        // 没有被映射
+                        continue;
+                }
+
+                if (*start & PTE_A)
+                {
+                        // set.
+                        *res |= 1 << i;
+                        // set back the access bit
+                        *start &= ~PTE_A;
+                }
+        }
+
+        return 0;
+}

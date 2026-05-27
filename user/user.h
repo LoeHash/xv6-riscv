@@ -31,6 +31,9 @@ int getcwd(void);
 int trace(long);
 int sysinfo(struct sysinfo_struct *);
 
+// start, pages, result(return by bits)
+int pgaccess(uint64, uint64, uint64);
+
 // ulib.c
 int stat(const char *, struct stat *);
 char *strcpy(char *, const char *);

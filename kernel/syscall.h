@@ -22,6 +22,7 @@
 #define SYS_close 21
 //=================
 #define SYS_sleep 22
-#define SYS_getcwd 22
-#define SYS_trace 23
-#define SYS_sysinfo 24
+#define SYS_getcwd 23
+#define SYS_trace 24
+#define SYS_sysinfo 25
+#define SYS_pgaccess 26

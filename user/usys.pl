@@ -46,3 +46,4 @@ entry("sleep");
 entry("getcwd");
 entry("trace");
 entry("sysinfo");
+entry("pgaccess");

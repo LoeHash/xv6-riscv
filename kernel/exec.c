@@ -146,7 +146,6 @@ int kexec(char *path, char **argv)
 
         if (p->pid == 1)
         {
-                printf("nhe usc-cache block: %p\n", nusc);
                 vmprint(p->pagetable);
         }
 
