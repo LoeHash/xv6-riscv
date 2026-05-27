@@ -165,8 +165,10 @@ sbrklazy(int n)
 
 int ugetpid(void)
 {
-        // 已经被映射好了
-        struct usyscall *p = (struct usyscall *)USYSCALL;
-        return p->pid;
+        return ((struct usyscall *)USYSCALL)->pid;
 }
 
+int ugetppid(void)
+{
+        return ((struct usyscall *)USYSCALL)->ppid;
+}

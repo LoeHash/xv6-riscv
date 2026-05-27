@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "defs.h"
 #include "elf.h"
-
+#include "ds.h"
 static int loadseg(pde_t *, uint64, struct inode *, uint, uint);
 
 // map ELF permissions to PTE permission bits.
@@ -53,8 +53,9 @@ int kexec(char *path, char **argv)
                 goto bad;
 
         if ((pagetable = proc_pagetable(p)) == 0)
+        {
                 goto bad;
-
+        }
         // Load program into memory.
         for (i = 0, off = elf.phoff; i < elf.phnum; i++, off += sizeof(ph))
         {
@@ -112,7 +113,6 @@ int kexec(char *path, char **argv)
 
         // push a copy of ustack[], the array of argv[] pointers.
         sp -= (argc + 1) * sizeof(uint64);
-        sp -= sp % 16;
         if (sp < stackbase)
                 goto bad;
         if (copyout(pagetable, sp, (char *)ustack, (argc + 1) * sizeof(uint64)) < 0)
@@ -124,21 +124,29 @@ int kexec(char *path, char **argv)
         p->trapframe->a1 = sp;
 
         // Save program name for debugging.
+        sp -= sp % 16;
         for (last = s = path; *s; s++)
                 if (*s == '/')
                         last = s + 1;
         safestrcpy(p->name, last, sizeof(p->name));
 
-        // Commit to the user image.
         oldpagetable = p->pagetable;
         p->pagetable = pagetable;
         p->sz = sz;
         p->trapframe->epc = elf.entry; // initial program counter = ulib.c:start()
         p->trapframe->sp = sp;         // initial stack pointer
+        struct usyscall *nusc = (struct usyscall *)_get_usc_cache_pa_ptr(p);
+        nusc->pid = p->pid;
+        if (p->pid > 1)
+        {
+                nusc->ppid = p->parent->pid;
+        }
+
         proc_freepagetable(oldpagetable, oldsz);
 
         return argc; // this ends up in a0, the first argument to main(argc, argv)
 
+        // Commit to the user image.
 bad:
         if (pagetable)
                 proc_freepagetable(pagetable, sz);

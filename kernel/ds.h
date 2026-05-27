@@ -11,5 +11,6 @@ struct sysinfo_struct
 struct usyscall
 {
         uint64 pid;
+        uint64 ppid;
 };
 #endif

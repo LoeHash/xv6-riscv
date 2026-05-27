@@ -159,20 +159,35 @@ found:
         return p;
 }
 
-int _create_proc_usyscall(pagetable_t pgtb, struct proc *p)
+int _create_usc_cache(pagetable_t pgtb, struct proc *p)
 {
         // 在此创建一个usyscall
         // 并将进程信息写入, 同时建立虚拟内存于此的映射
         // 占用4096bytes
         struct usyscall *usc;
         usc = kalloc();
-        usc->pid = p->pid;
+
         // 在虚拟空间中映射
         if (mappages(pgtb, USYSCALL, PGSIZE, (uint64)usc, PTE_R | PTE_U) != 0)
         {
                 return -1;
         }
         return 0;
+}
+
+uint64 _get_usc_cache_pa_ptr(struct proc *p)
+{
+
+        pte_t *pte = walk(p->pagetable, USYSCALL, 0);
+
+        if (*pte == 0)
+        {
+                panic("usc cache!");
+                return (uint64)-1;
+        }
+
+        // get pa
+        return PTE2PA(*pte) | (USYSCALL & 0xfff);
 }
 
 // free a proc structure and the data hanging from it,
@@ -230,8 +245,8 @@ proc_pagetable(struct proc *p)
                 return 0;
         }
 
-        // 加速syscall
-        if (_create_proc_usyscall(pagetable, p) != 0)
+        // 先创建usc缓存
+        if (_create_usc_cache(pagetable, p) != 0)
         {
                 uvmunmap(pagetable, USYSCALL, 1, 0);
                 uvmfree(pagetable, 0);
@@ -350,6 +365,12 @@ int kfork(void)
         np->state = RUNNABLE;
         release(&np->lock);
 
+        // must get the lock
+        acquire(&np->lock);
+        struct usyscall *uscp = (struct usyscall *)_get_usc_cache_pa_ptr(np);
+        uscp->pid = np->pid;
+        uscp->ppid = np->parent->pid;
+        release(&np->lock);
         return pid;
 }
 

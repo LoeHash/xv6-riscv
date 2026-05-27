@@ -153,7 +153,8 @@ UPROGS=\
 	$U/_zombie_plus\
 	$U/_trace\
 	$U/_sysinfotest\
-	$U/_testgetpid\
+	$U/_getpid\
+	$U/_getppid\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
