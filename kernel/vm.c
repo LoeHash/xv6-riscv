@@ -285,6 +285,52 @@ void freewalk(pagetable_t pagetable)
         }
         kfree((void *)pagetable);
 }
+int is_valid(pte_t p)
+{
+        return (p & PTE_V) && (p & (PTE_R | PTE_W | PTE_X)) == 0;
+}
+
+void vmprint(pagetable_t pgtb)
+{
+        printf("page table %p\n", pgtb);
+
+        for (int i = 0; i < 512; i++)
+        {
+                // 获取当前的叶子节点
+                pte_t pi = pgtb[i];
+                // 所有的非叶子节点都是v为1, 且 rwx为0
+                if (!is_valid(pi))
+                {
+                        continue;
+                }
+                pagetable_t ichild = ((pagetable_t)PTE2PA(pi));
+                printf(" ..%d: pte %p\t\tpa: %p\n", i, (uint64 *)pi, (uint64 *)ichild);
+
+                for (int j = 0; j < 512; j++)
+                {
+
+                        pte_t pj = ichild[j];
+                        if (!is_valid(pj))
+                        {
+                                continue;
+                        }
+
+                        pagetable_t jchild = ((pagetable_t)PTE2PA(pj));
+                        printf(" ..");
+                        printf(" ..%d: pte %p\tpa: %p\n", j, (uint64 *)pj, (uint64 *)jchild);
+
+                        for (int k = 0; k < 512; k++)
+                        {
+                                pte_t pk = jchild[k];
+                                if ((pk & PTE_V))
+                                {
+                                        printf(" .. ..");
+                                        printf(" ..%d: pte %p\tpa: %p\n", k, (uint64 *)pk, (uint64 *)PTE2PA(pk));
+                                }
+                        }
+                }
+        }
+}
 
 // Free user memory pages,
 // then free page-table pages.

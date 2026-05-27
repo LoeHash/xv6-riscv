@@ -106,6 +106,8 @@ int either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void procdump(void);
 int cpupcount(void);
 uint64 _get_usc_cache_pa_ptr(struct proc *);
+void vmprint(pagetable_t pgtb);
+
 // swtch.S
 void swtch(struct context *, struct context *);
 

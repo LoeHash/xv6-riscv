@@ -144,6 +144,12 @@ int kexec(char *path, char **argv)
 
         proc_freepagetable(oldpagetable, oldsz);
 
+        if (p->pid == 1)
+        {
+                printf("nhe usc-cache block: %p\n", nusc);
+                vmprint(p->pagetable);
+        }
+
         return argc; // this ends up in a0, the first argument to main(argc, argv)
 
         // Commit to the user image.
