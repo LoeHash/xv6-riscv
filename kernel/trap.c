@@ -58,6 +58,7 @@ usertrap(void)
 
                 // sepc points to the ecall instruction,
                 // but we want to return to the next instruction.
+                // p->trapframe->epc += 4;
                 p->trapframe->epc += 4;
 
                 // an interrupt will change sepc, scause, and sstatus,

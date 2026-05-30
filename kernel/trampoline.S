@@ -76,6 +76,7 @@ uservec:
         ld sp, 8(a0)
 
         # make tp hold the current hartid, from p->trapframe->kernel_hartid
+        # 这个tp是后期调用myproc,mycpu的根本
         ld tp, 32(a0)
 
         # load the address of usertrap(), from p->trapframe->kernel_trap
