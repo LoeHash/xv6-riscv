@@ -157,6 +157,7 @@ UPROGS=\
 	$U/_getppid\
 	$U/_pgaccess\
 	$U/_mmalloc\
+	$U/_oom\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)
