@@ -135,6 +135,8 @@ uint64 sys_sleep(void)
                 yield();
         }
 
+        backtrace();
+
         return 0;
 }
 
