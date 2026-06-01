@@ -104,6 +104,9 @@ extern uint64 sys_getcwd(void);
 extern uint64 sys_trace(void);
 extern uint64 sys_sysinfo(void);
 extern uint64 sys_pgaccess(void);
+extern uint64 sys_signal(void);
+extern uint64 sys_sendsig(void);
+extern uint64 sys_sigreturn(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -134,6 +137,9 @@ static uint64 (*syscalls[])(void) = {
     [SYS_trace] sys_trace,
     [SYS_sysinfo] sys_sysinfo,
     [SYS_pgaccess] sys_pgaccess,
+    [SYS_signal] sys_signal,
+    [SYS_sendsig] sys_sendsig,
+    [SYS_sigreturn] sys_sigreturn,
 
 };
 

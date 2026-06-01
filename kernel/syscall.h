@@ -26,3 +26,6 @@
 #define SYS_trace 24
 #define SYS_sysinfo 25
 #define SYS_pgaccess 26
+#define SYS_signal 27
+#define SYS_sendsig 28
+#define SYS_sigreturn 29

@@ -190,7 +190,7 @@ void backtrace(void)
 
         while (fp < PGROUNDUP(fp))
         {
-                printf("----> %p\n", (uint64 *)(fp));
+                printf("[%d]----> %p\n", myproc()->pid, (uint64 *)(fp));
                 fp = *((uint64 *)(fp)-2);
         }
 }

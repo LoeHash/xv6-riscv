@@ -46,9 +46,12 @@ sys_sbrk(void)
 
         argint(0, &n);
         argint(1, &t);
-        addr = myproc()->sz;
+        struct proc *p = myproc();
 
-        if (t == SBRK_EAGER || n < 0)
+        addr = p->sz;
+
+        // t == SBRK_EAGER || n < 0
+        if (0)
         {
                 if (growproc(n) < 0)
                 {
@@ -57,15 +60,16 @@ sys_sbrk(void)
         }
         else
         {
-                // Lazily allocate memory for this process: increase its memory
-                // size but don't allocate memory. If the processes uses the
-                // memory, vmfault() will allocate it.
-                if (addr + n < addr)
+
+                // lazy
+                if (p->sz + n > TRAPFRAME)
+                {
                         return -1;
-                if (addr + n > TRAPFRAME)
-                        return -1;
-                myproc()->sz += n;
+                }
+
+                p->sz += n;
         }
+
         return addr;
 }
 
@@ -135,8 +139,6 @@ uint64 sys_sleep(void)
                 yield();
         }
 
-        backtrace();
-
         return 0;
 }
 
@@ -189,6 +191,53 @@ uint64 sys_pgaccess()
         }
 
         copyout(myproc()->pagetable, res, (char *)&(tmp), 8);
+
+        return 0;
+}
+
+uint64 sys_signal(void)
+{
+
+        // arg:
+        uint64 signum, sig_handler;
+        argaddr(0, &signum);
+        argaddr(1, &sig_handler);
+        // printf("%ld", sig_handler);
+        // ((void (*)(int))(myproc()->sig_handlers[0]))(1121);
+
+        return signal(myproc(), signum, (void (*)(int))sig_handler);
+}
+
+uint64 sys_sendsig(void)
+{
+        uint64 signum, pid;
+        argaddr(0, &pid);
+        argaddr(1, &signum);
+
+        sendsig(pid, signum);
+
+        // printf("%ld\n", myproc()->sig_pending[0]);
+
+        // return 0;
+        return sendsig(pid, signum);
+}
+
+uint64 sys_sigreturn(void)
+{
+        uint64 signum;
+        argaddr(0, &signum);
+
+        printf("绕回来了! 恢复寄存器! %ld\n", signum);
+        struct proc *p = myproc();
+        struct trapframe *tf = p->trapframe;
+        uint64 trap_sp = tf->sp;
+        struct trapframe save_tf;
+        if (copyin(p->pagetable, (char *)&save_tf, trap_sp, sizeof(save_tf)))
+        {
+                return -1;
+        }
+
+        *tf = save_tf;
 
         return 0;
 }

@@ -47,3 +47,5 @@ entry("getcwd");
 entry("trace");
 entry("sysinfo");
 entry("pgaccess");
+entry("signal");
+entry("sendsig");

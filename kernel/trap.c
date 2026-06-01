@@ -9,7 +9,7 @@
 struct spinlock tickslock;
 uint ticks;
 
-extern char trampoline[], uservec[];
+extern char trampoline[], uservec[], sigreturn_trampoline[];
 
 // in kernelvec.S, calls kerneltrap().
 void kernelvec();
@@ -27,6 +27,33 @@ void trapinithart(void)
         w_stvec((uint64)kernelvec);
 }
 
+void handle_sig_handler(int sig)
+{
+
+        // 获取处理函数
+        struct proc *p = myproc();
+        uint64 handler = p->sig_handlers[sig];
+
+        // if (handler == 0)
+        // {
+        //         p->sig_pending[0] &= ~(1 << sig);
+        //         // noting to do.
+        //         return;
+        // }
+
+        struct trapframe *tf = p->trapframe;
+
+        // 否则, 保存当前的trapframe
+        uint64 csp = tf->sp - sizeof(struct trapframe);
+        csp &= ~0xFUL;
+        copyout(p->pagetable, csp, (char *)tf, sizeof(*tf));
+        // 修改当前trapframe
+        tf->sp = csp;
+        tf->epc = handler;
+        tf->ra = (uint64)sigreturn_trampoline[0];
+        tf->a0 = sig;
+        p->sig_pending[0] &= ~(1 << sig);
+}
 //
 // handle an interrupt, exception, or system call from user space.
 // called from, and returns to, trampoline.S
@@ -71,10 +98,17 @@ usertrap(void)
         {
                 // ok
         }
-        else if ((r_scause() == 15 || r_scause() == 13) &&
-                 vmfault(p->pagetable, r_stval(), (r_scause() == 13) ? 1 : 0) != 0)
+        else if ((r_scause() == 15 || r_scause() == 13))
         {
+                printf("pg fault: %p\n", (uint64 *)r_stval());
+
                 // page fault on lazily-allocated page
+                if (vmfault(p->pagetable, r_stval(), (r_scause() == 13 ? 1 : 0)) == 0)
+                {
+                        // kill
+                        p->killed = 1;
+                        printf("killed\n");
+                }
         }
         else
         {
@@ -91,6 +125,18 @@ usertrap(void)
         if (which_dev == 2)
                 yield();
 
+        // 有信号需要处理
+        if (p->sig_pending[0])
+        {
+                for (int i = 0; i < 64; i++)
+                {
+                        if (p->sig_pending[0] & (1 << i))
+                        {
+                                handle_sig_handler(i);
+                                break;
+                        }
+                }
+        }
         prepare_return();
 
         // the user page table to switch to, for trampoline.S

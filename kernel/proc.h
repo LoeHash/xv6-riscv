@@ -116,4 +116,16 @@ struct proc
 
         // the traced system call
         int traced_system_call;
+
+        // ala interval
+        uint64 alarm_interval;
+
+                // the sig bit
+        uint64 sig_bits[1];
+        // the sig that have to be handled
+        uint64 sig_pending[1];
+        // the address of the sig handler.
+        uint64 sig_handlers[64];
+        // tramp before SIG
+        struct trapframe *sig_save_frame;
 };

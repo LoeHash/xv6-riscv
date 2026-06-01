@@ -716,6 +716,89 @@ int killed(struct proc *p)
         return k;
 }
 
+struct proc *get_proc_by_pid(int pid)
+{
+        struct proc *p;
+
+        for (p = proc; p < &proc[NPROC]; p++)
+        {
+                if (p->pid == pid)
+                {
+                        return p;
+                }
+        }
+        return 0;
+}
+
+int find_signum_index(uint64 signum, int *sig_index, int sig_bits_count)
+{
+        *sig_index = 0;
+        while (signum > (*sig_index + 1) * 64)
+        {
+
+                if ((*sig_index + 1) * 64 <= sig_bits_count * 64)
+                {
+                        (*sig_index)++;
+                }
+                else
+                {
+                        return -1;
+                }
+        }
+        return 0;
+}
+
+int signal(struct proc *p, uint64 signum, void (*handler)(int))
+{
+        if (signum == SIGKILL)
+        {
+                return -1;
+        }
+
+        int sig_index = 0;
+        if (find_signum_index(signum, &sig_index, sizeof(p->sig_bits)) != 0)
+        {
+                return -1;
+        }
+
+        acquire(&p->lock);
+
+        p->sig_bits[sig_index] |= (1ULL << signum);
+        p->sig_handlers[signum] = (uint64)(void (*)(int))handler;
+
+        release(&p->lock);
+
+        return 0;
+}
+
+int sendsig(int pid, uint64 signum)
+{
+        struct proc *p = get_proc_by_pid(pid);
+
+        if (p == 0)
+        {
+                return -1;
+        }
+
+        int sig_index = 0;
+        if (find_signum_index(signum, &sig_index, sizeof(p->sig_bits)) != 0)
+        {
+                return -1;
+        }
+
+        acquire(&p->lock);
+
+        p->sig_pending[sig_index] |= (1ULL << signum);
+
+        // if (p->state == RUNNING)
+        // {
+        // }
+
+        release(&p->lock);
+
+        return 0;
+}
+
 // Copy to either a user address, or kernel address,
 // depending on usr_dst.
 // Returns 0 on success, -1 on error.

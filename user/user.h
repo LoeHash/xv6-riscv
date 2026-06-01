@@ -30,6 +30,8 @@ int sleep(long);
 int getcwd(void);
 int trace(long);
 int sysinfo(struct sysinfo_struct *);
+int signal(uint64, uint64);
+int sendsig(int, uint64);
 
 // start, pages, result(return by bits)
 int pgaccess(uint64, uint64, uint64);

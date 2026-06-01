@@ -81,6 +81,8 @@ void printfinit(void);
 void backtrace(void);
 
 // proc.c
+int signal(struct proc *, uint64, void (*)(int));
+int sendsig(int pid, uint64 signum);
 int cpuid(void);
 void kexit(int);
 int kfork(void);
@@ -192,3 +194,5 @@ void virtio_disk_intr(void);
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
 
 uint64 sum_to(uint64 sum_to);
+
+void sbi_send_ipi(unsigned long hart_mask);

@@ -517,26 +517,45 @@ int copyinstr(pagetable_t pagetable, char *dst, uint64 srcva, uint64 max)
 uint64
 vmfault(pagetable_t pagetable, uint64 va, int read)
 {
-        uint64 mem;
         struct proc *p = myproc();
 
-        if (va >= p->sz)
+        // all thing we need to do:
+        // check the va if it more than p->sz
+        if (va > p->sz)
+        {
                 return 0;
+        }
+        // printf("origin va: %p\n", (uint64 *)va);
+
+        // get down
         va = PGROUNDDOWN(va);
-        if (ismapped(pagetable, va))
+
+        // walk first
+        pte_t *pte = walk(pagetable, va, 1);
+        if (pte == 0)
+        {
+                printf("no pte!\n");
+                return 0;
+        }
+
+        // 先检查是否为V
+        // 无论如何, 我们都应将这个v设为1
+        if (*pte & PTE_V)
         {
                 return 0;
         }
-        mem = (uint64)kalloc();
-        if (mem == 0)
-                return 0;
-        memset((void *)mem, 0, PGSIZE);
-        if (mappages(p->pagetable, va, PGSIZE, mem, PTE_W | PTE_U | PTE_R) != 0)
+
+        uint64 mem_pa = (uint64)kalloc();
+
+        if (mem_pa == 0)
         {
-                kfree((void *)mem);
                 return 0;
         }
-        return mem;
+
+        memset((void *)mem_pa, 0, PGSIZE);
+
+        *pte = PA2PTE(mem_pa) | PTE_R | PTE_U | PTE_W | PTE_V;
+        return mem_pa;
 }
 
 int ismapped(pagetable_t pagetable, uint64 va)

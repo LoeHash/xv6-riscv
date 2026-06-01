@@ -148,3 +148,9 @@ userret:
         # return to user mode and user pc.
         # prepare_return() sets up sstatus and sepc.
         sret
+
+.globl sigreturn_trampoline
+sigreturn_trampoline:
+        li a7, 29
+        ecall
+        sret
