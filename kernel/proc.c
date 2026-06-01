@@ -22,8 +22,20 @@ struct spinlock pid_lock;
 extern void forkret(void);
 static void freeproc(struct proc *p);
 
+asm(".section .text\n"
+    ".globl sigreturn_code\n"
+    ".globl sigreturn_code_end\n"
+    "sigreturn_code:\n"
+    "    li a7, 29\n"
+    "    ecall\n"
+    "    j .\n"
+    "sigreturn_code_end:\n"
+    ".section .text\n");
+
 extern char trampoline[]; // trampoline.S
 
+extern char sigreturn_code[];
+extern char sigreturn_code_end[];
 // helps ensure that wakeups of wait()ing
 // parents are not lost. helps obey the
 // memory model when using p->parent.
@@ -159,6 +171,35 @@ found:
         return p;
 }
 
+// 创建sig 蹦床映射
+int _create_sigcode_page(pagetable_t pgtb, struct proc *p)
+{
+        // 分配一页物理内存
+        char *mem = kalloc();
+        if (mem == 0)
+        {
+                uvmfree(pgtb, 0);
+                return -1;
+        }
+        memset(mem, 0, PGSIZE);
+
+        // 复制 sigreturn 代码
+        uint64 codelen = sigreturn_code_end - sigreturn_code;
+        memmove(mem, sigreturn_code, codelen);
+
+        // 映射到 SIGPAGE：用户态可读可执行，不可写
+        if (mappages(pgtb, SIGCODE, PGSIZE,
+                     (uint64)mem, PTE_R | PTE_X | PTE_U) != 0)
+        {
+                kfree(mem);
+                uvmfree(pgtb, 0);
+                return -1;
+        }
+
+        return 0;
+        // p->sigpage = (uint64)mem;
+}
+
 int _create_usc_cache(pagetable_t pgtb, struct proc *p)
 {
         // 在此创建一个usyscall
@@ -166,7 +207,7 @@ int _create_usc_cache(pagetable_t pgtb, struct proc *p)
         // 占用4096bytes
         struct usyscall *usc;
         usc = kalloc();
-
+        memset((char *)usc, 0, PGSIZE);
         // 在虚拟空间中映射
         if (mappages(pgtb, USYSCALL, PGSIZE, (uint64)usc, PTE_R | PTE_U) != 0)
         {
@@ -230,6 +271,7 @@ proc_pagetable(struct proc *p)
         if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                      (uint64)trampoline, PTE_R | PTE_X) < 0)
         {
+                printf("1sdsdsdsdsdsdsd\n");
                 uvmfree(pagetable, 0);
                 return 0;
         }
@@ -244,10 +286,18 @@ proc_pagetable(struct proc *p)
                 return 0;
         }
 
-        // 先创建usc缓存
+        // 创建usc缓存
         if (_create_usc_cache(pagetable, p) != 0)
         {
                 uvmunmap(pagetable, USYSCALL, 1, 0);
+                uvmfree(pagetable, 0);
+                return 0;
+        }
+
+        // 创建SIGCODE蹦床页
+        if (_create_sigcode_page(pagetable, p) != 0)
+        {
+                uvmunmap(pagetable, SIGCODE, 1, 0);
                 uvmfree(pagetable, 0);
                 return 0;
         }
@@ -262,6 +312,7 @@ void proc_freepagetable(pagetable_t pagetable, uint64 sz)
         uvmunmap(pagetable, TRAMPOLINE, 1, 0);
         uvmunmap(pagetable, TRAPFRAME, 1, 0);
         uvmunmap(pagetable, USYSCALL, 1, 0);
+        uvmunmap(pagetable, SIGCODE, 1, 0);
         uvmfree(pagetable, sz);
 }
 
@@ -790,9 +841,12 @@ int sendsig(int pid, uint64 signum)
 
         p->sig_pending[sig_index] |= (1ULL << signum);
 
-        // if (p->state == RUNNING)
-        // {
-        // }
+        // xv6会持续的给进程发送时钟中断信号
+        // 使其不断的进入到内核态
+        if (p->state == SLEEPING)
+        {
+                p->state = RUNNABLE;
+        }
 
         release(&p->lock);
 

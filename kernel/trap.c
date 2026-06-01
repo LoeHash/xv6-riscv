@@ -45,12 +45,14 @@ void handle_sig_handler(int sig)
 
         // 否则, 保存当前的trapframe
         uint64 csp = tf->sp - sizeof(struct trapframe);
-        csp &= ~0xFUL;
+
+        // csp &= ~0xFUL;
         copyout(p->pagetable, csp, (char *)tf, sizeof(*tf));
+
         // 修改当前trapframe
         tf->sp = csp;
         tf->epc = handler;
-        tf->ra = (uint64)sigreturn_trampoline[0];
+        tf->ra = (uint64)SIGCODE;
         tf->a0 = sig;
         p->sig_pending[0] &= ~(1 << sig);
 }
@@ -63,7 +65,6 @@ uint64
 usertrap(void)
 {
         int which_dev = 0;
-
         if ((r_sstatus() & SSTATUS_SPP) != 0)
                 panic("usertrap: not from user mode");
 
@@ -137,6 +138,7 @@ usertrap(void)
                         }
                 }
         }
+
         prepare_return();
 
         // the user page table to switch to, for trampoline.S

@@ -45,7 +45,7 @@
 
 // map kernel stacks beneath the trampoline,
 // each surrounded by invalid guard pages.
-#define KSTACK(p) (TRAMPOLINE - ((p) + 1) * 2 * PGSIZE)
+#define KSTACK(p) (TRAMPOLINE - ((p) + 1) * 2 * PGSIZE - PGSIZE)
 
 // User memory layout.
 // Address zero first:
@@ -57,6 +57,7 @@
 //   TRAPFRAME (p->trapframe, used by the trampoline)
 //   TRAMPOLINE (the same page as in the kernel)
 #define TRAPFRAME (TRAMPOLINE - PGSIZE)
+#define SIGCODE (USYSCALL + 4 * PGSIZE)
 
 // for now
 #define USYSCALL 0x70000000L

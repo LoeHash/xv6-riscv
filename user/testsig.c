@@ -14,8 +14,8 @@ int main(int argc, char *argv[])
                 signal(0, (uint64)&handler);
                 while (1)
                 {
-                        // sleep(2);
-                        // printf("[%d] .....\n", getpid());
+                        sleep(2);
+                        printf("[%d] working.....\n", getpid());
                 }
         }
         while (1)
