@@ -6,8 +6,10 @@ _*
 *.sym
 *.img
 *.info
+*.k
 /mkfs/mkfs
 /kernel/kernel
 /user/usys.S
 .gdbinit
+.gitignore
 TAGS
