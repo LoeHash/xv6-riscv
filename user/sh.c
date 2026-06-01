@@ -195,6 +195,7 @@ int main(void)
                                 runcmd(parsecmd(cmd));
 
                         // father to wait child.
+                        printf("waiting...\n");
                         wait(0);
                 }
         }
