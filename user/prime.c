@@ -82,6 +82,11 @@ int main(int argc, char const *argv[])
         }
         printf("\n");
         close(pipe_fds[0]);
+
+        // while (wait(0) != -1)
+        // {
+        // }
+
         exit(0);
 }
 

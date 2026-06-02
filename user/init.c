@@ -58,7 +58,7 @@ int main(void)
                         else
                         {
                                 // it was a parentless process; do nothing.
-                                printf("\nthe [%d] has no parent.\n", wpid);
+                                // printf("\nthe [%d] has no parent.\n", wpid);
                         }
                 }
         }

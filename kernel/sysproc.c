@@ -227,7 +227,7 @@ uint64 sys_sigreturn(void)
         uint64 signum;
         argaddr(0, &signum);
 
-        printf("绕回来了! 恢复寄存器! %ld\n", signum);
+        // printf("绕回来了! 恢复寄存器! %ld\n", signum);
         struct proc *p = myproc();
         struct trapframe *tf = p->trapframe;
         uint64 trap_sp = tf->sp;

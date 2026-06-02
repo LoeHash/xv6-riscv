@@ -101,14 +101,12 @@ usertrap(void)
         }
         else if ((r_scause() == 15 || r_scause() == 13))
         {
-                printf("pg fault: %p\n", (uint64 *)r_stval());
 
                 // page fault on lazily-allocated page
                 if (vmfault(p->pagetable, r_stval(), (r_scause() == 13 ? 1 : 0)) == 0)
                 {
                         // kill
                         p->killed = 1;
-                        printf("killed\n");
                 }
         }
         else
