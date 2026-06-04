@@ -61,3 +61,6 @@
 
 // for now
 #define USYSCALL 0x70000000L
+
+// cow.
+#define PA2_REFCOUN_IDX(pa) ((((uint64)(pa) - KERNBASE) / PGSIZE))

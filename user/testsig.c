@@ -28,5 +28,5 @@ int main(int argc, char *argv[])
 }
 void handler(int info)
 {
-        printf("受到该死的信号了!: %d\n", info);
+        printf("收到信号了!: %d\n", info);
 }

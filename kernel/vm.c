@@ -115,6 +115,22 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
         return &pagetable[PX(0, va)];
 }
 
+/*
+ *      set the va's pte
+ *      we can assign it to a pictular pte.
+ *      it's dangerous. it will return previous pte if it exists
+ *      else, return zero.
+ *      fthermore, make sure that the va has been alloced level 1 or 2 pte
+ *      or the kernel will crash.
+ */
+void uvmset_pte(pagetable_t pg, uint64 va, pte_t *pte)
+{
+        pte_t *pre_pte;
+        pre_pte = walk(pg, va, 1);
+
+        *pre_pte = *pte;
+}
+
 // Look up a virtual address, return the physical address,
 // or 0 if not mapped.
 // Can only be used to look up user pages.
@@ -347,7 +363,10 @@ void uvmfree(pagetable_t pagetable, uint64 sz)
 // physical memory.
 // returns 0 on success, -1 on failure.
 // frees any allocated pages on failure.
-int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
+// cow: is using cow fork?
+// 优化:
+//      ->      使用cow进行优化
+int uvmcopy(pagetable_t old, pagetable_t *new, uint64 sz, int cow)
 {
         pte_t *pte;
         uint64 pa, i;
@@ -358,23 +377,46 @@ int uvmcopy(pagetable_t old, pagetable_t new, uint64 sz)
         {
                 if ((pte = walk(old, i, 0)) == 0)
                         continue; // page table entry hasn't been allocated
+
                 if ((*pte & PTE_V) == 0)
                         continue; // physical page hasn't been allocated
-                pa = PTE2PA(*pte);
-                flags = PTE_FLAGS(*pte);
-                if ((mem = kalloc()) == 0)
-                        goto err;
-                memmove(mem, (char *)pa, PGSIZE);
-                if (mappages(new, i, PGSIZE, (uint64)mem, flags) != 0)
+
+                // using cow or not
+                if (cow)
                 {
-                        kfree(mem);
-                        goto err;
+                        // 1. 构造 COW 的 flags（基于原 pte，但设 COW、去 W）
+                        uint flags_cow = (PTE_FLAGS(*pte) | PTE_C) & ~PTE_W;
+
+                        // 2. 先映射到子进程（此时父进程 pte 还没改）
+                        if (mappages(*new, i, PGSIZE, PTE2PA(*pte), flags_cow) != 0)
+                                goto err; // 失败：不做任何修改，直接跳转
+
+                        // 3. 子进程映射成功，现在修改父进程的 PTE
+                        *pte = (*pte | PTE_C) & ~PTE_W;
+
+                        // 4. 增加引用计数（父子共享）
+                        uvm_mem_add_ref(PTE2PA(*pte));
+                }
+                else
+                {
+                        // 以下操作推迟到trap
+                        pa = PTE2PA(*pte);
+                        flags = PTE_FLAGS(*pte);
+                        if ((mem = kalloc()) == 0)
+                                goto err;
+                        memmove(mem, (char *)pa, PGSIZE);
+                        if (mappages(*new, i, PGSIZE, (uint64)mem, flags) != 0)
+                        {
+                                kfree(mem);
+                                goto err;
+                        }
                 }
         }
+
         return 0;
 
 err:
-        uvmunmap(new, 0, i / PGSIZE, 1);
+        uvmunmap(*new, 0, i / PGSIZE, 1);
         return -1;
 }
 
@@ -525,7 +567,6 @@ vmfault(pagetable_t pagetable, uint64 va, int read)
         {
                 return 0;
         }
-        // printf("origin va: %p\n", (uint64 *)va);
 
         // get down
         va = PGROUNDDOWN(va);
@@ -539,10 +580,37 @@ vmfault(pagetable_t pagetable, uint64 va, int read)
         }
 
         // 先检查是否为V
-        // 无论如何, 我们都应将这个v设为1
-        if (*pte & PTE_V)
+        // 因为这里可能是cow的
+        // 当前页已经被分配, 同时设置了cow标志, 同时不是读取
+        if ((*pte & PTE_V) && (*pte & PTE_C) && !read)
         {
-                return 0;
+                // 那么此时才真的是cow
+                // 1. 获取当前pte的flag, 并添加pte_w
+                int flag = (PTE_FLAGS(*pte) | PTE_W) & ~PTE_C;
+
+                // 2. 创建一个内存块
+                char *mem = kalloc();
+
+                if (mem == 0)
+                {
+                        // out of mem
+                        return 0;
+                }
+
+                // 3. 将当前pte对应的内存复制到新的内存块
+                char *old_mem = (char *)PTE2PA(*pte);
+                memmove(mem, old_mem, PGSIZE);
+
+                // 4. 重新建立pte映射
+                //    先前pte必然已经存在!
+                //    所以直接 PA2PTE(mem) | flag 即可
+                *pte = PA2PTE(mem) | flag;
+
+                // 5. 把先前的内存块进行释放
+                //    多个内存块引用一致, 使用计数法
+                kfree(old_mem);
+
+                return (uint64)mem;
         }
 
         uint64 mem_pa = (uint64)kalloc();

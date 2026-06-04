@@ -147,6 +147,7 @@ int kexec(char *path, char **argv)
         if (p->pid == 1)
         {
                 vmprint(p->pagetable);
+                printf("\nthe sz of p: %ld\n", p->sz);
         }
 
         return argc; // this ends up in a0, the first argument to main(argc, argv)

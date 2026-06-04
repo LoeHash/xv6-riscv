@@ -14,6 +14,10 @@ void freerange(void *pa_start, void *pa_end);
 extern char end[]; // first address after kernel.
                    // defined by kernel.ld.
 
+// all zero
+int mem_reference_counter[(PHYSTOP - KERNBASE) / PGSIZE] = {0};
+int isInit = 1;
+
 struct run
 {
         struct run *next;
@@ -21,13 +25,20 @@ struct run
 
 struct
 {
-        struct spinlock lock;
+        struct spinlock mem_lock;
+        struct spinlock counter_lock;
+        struct spinlock init_lock;
         struct run *freelist;
 } kmem;
 
 void kinit()
 {
-        initlock(&kmem.lock, "kmem");
+        initlock(&kmem.mem_lock, "kmem");
+        initlock(&kmem.counter_lock, "kcounter");
+        initlock(&kmem.init_lock, "kinit");
+        printf("size of arry: %ld\n", (uint64)(PHYSTOP - KERNBASE) / PGSIZE);
+        printf("test of arry: %ld\n", (uint64)(mem_reference_counter[32768]));
+
         freerange(end, (void *)PHYSTOP);
 }
 
@@ -37,6 +48,17 @@ void freerange(void *pa_start, void *pa_end)
         p = (char *)PGROUNDUP((uint64)pa_start);
         for (; p + PGSIZE <= (char *)pa_end; p += PGSIZE)
                 kfree(p);
+        acquire(&kmem.init_lock);
+        isInit = 0;
+        release(&kmem.init_lock);
+}
+
+// va
+void uvm_mem_add_ref(uint64 pa)
+{
+
+        uint64 down_pa = PGROUNDDOWN(pa);
+        mem_reference_counter[PA2_REFCOUN_IDX(down_pa)]++;
 }
 
 // Free the page of physical memory pointed at by pa,
@@ -50,15 +72,46 @@ void kfree(void *pa)
         if (((uint64)pa % PGSIZE) != 0 || (char *)pa < end || (uint64)pa >= PHYSTOP)
                 panic("kfree");
 
-        // Fill with junk to catch dangling refs.
-        memset(pa, 1, PGSIZE);
+        // 初始化阶段：直接放回 freelist
+        if (isInit)
+        {
+                memset(pa, 1, PGSIZE);
+                r = (struct run *)pa;
+                acquire(&kmem.mem_lock);
+                r->next = kmem.freelist;
+                kmem.freelist = r;
+                release(&kmem.mem_lock);
+                return;
+        }
 
-        r = (struct run *)pa;
+        uint64 pa_idx = PA2_REFCOUN_IDX(pa);
 
-        acquire(&kmem.lock);
-        r->next = kmem.freelist;
-        kmem.freelist = r;
-        release(&kmem.lock);
+        acquire(&kmem.counter_lock);
+
+        if (mem_reference_counter[pa_idx] > 1)
+        {
+                mem_reference_counter[pa_idx]--;
+                // printf("- idx: %ld, ref: %d\n", pa_idx, mem_reference_counter[pa_idx]);
+                release(&kmem.counter_lock);
+                return;
+        }
+
+        if (mem_reference_counter[pa_idx] == 1)
+        {
+                mem_reference_counter[pa_idx]--;
+                // printf("- idx: %ld, ref: %d\n", pa_idx, mem_reference_counter[pa_idx]);
+                release(&kmem.counter_lock);
+                memset(pa, 1, PGSIZE);
+                struct run *r = (struct run *)pa;
+                acquire(&kmem.mem_lock);
+                r->next = kmem.freelist;
+                kmem.freelist = r;
+                release(&kmem.mem_lock);
+                return;
+        }
+        release(&kmem.counter_lock);
+
+        panic("fuck you!");
 }
 
 // Allocate one 4096-byte page of physical memory.
@@ -69,13 +122,20 @@ kalloc(void)
 {
         struct run *r;
 
-        acquire(&kmem.lock);
+        acquire(&kmem.mem_lock);
         r = kmem.freelist;
 
         // 反过来的链表
         if (r)
                 kmem.freelist = r->next;
-        release(&kmem.lock);
+
+        release(&kmem.mem_lock);
+
+        acquire(&kmem.counter_lock);
+        mem_reference_counter[PA2_REFCOUN_IDX(r)]++;
+        release(&kmem.counter_lock);
+
+        // printf("+ idx: %ld, ref: %d\n", PA2_REFCOUN_IDX(r), mem_reference_counter[PA2_REFCOUN_IDX(r)]);
 
         if (r)
                 memset((char *)r, 5, PGSIZE); // fill with junk
@@ -99,5 +159,3 @@ uint64 kget_free_mem_size(void)
 
         return page_count * PGSIZE;
 }
-// 133185536
-// 133185536

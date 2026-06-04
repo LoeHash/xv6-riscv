@@ -120,6 +120,8 @@ int allocpid()
 // If found, initialize state required to run in the kernel,
 // and return with p->lock held.
 // If there are no free procs, or a memory allocation fails, return 0.
+// 后期修改ps:
+//      ->      sigcode_trampoline 会在创建空页表时默认创建
 static struct proc *
 allocproc(void)
 {
@@ -271,7 +273,6 @@ proc_pagetable(struct proc *p)
         if (mappages(pagetable, TRAMPOLINE, PGSIZE,
                      (uint64)trampoline, PTE_R | PTE_X) < 0)
         {
-                printf("1sdsdsdsdsdsdsd\n");
                 uvmfree(pagetable, 0);
                 return 0;
         }
@@ -379,12 +380,14 @@ int kfork(void)
         }
 
         // Copy user memory from parent to child.
-        if (uvmcopy(p->pagetable, np->pagetable, p->sz) < 0)
+        // using cow.
+        if (uvmcopy(p->pagetable, &(np->pagetable), p->sz, 1) < 0)
         {
                 freeproc(np);
                 release(&np->lock);
                 return -1;
         }
+
         np->sz = p->sz;
 
         // copy saved user registers.
@@ -403,8 +406,6 @@ int kfork(void)
 
         pid = np->pid;
 
-        np->traced_system_call = p->traced_system_call;
-
         release(&np->lock);
 
         acquire(&wait_lock);
@@ -417,10 +418,14 @@ int kfork(void)
 
         // must get the lock
         acquire(&np->lock);
+
+        np->traced_system_call = p->traced_system_call;
         struct usyscall *uscp = (struct usyscall *)_get_usc_cache_pa_ptr(np);
         uscp->pid = np->pid;
         uscp->ppid = np->parent->pid;
+
         release(&np->lock);
+
         return pid;
 }
 
