@@ -12,4 +12,5 @@ _*
 /user/usys.S
 .gdbinit
 .gitignore
+.gdb_history
 TAGS
