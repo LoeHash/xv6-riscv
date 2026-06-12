@@ -29,6 +29,7 @@ OBJS = \
   $K/kernelvec.o \
   $K/plic.o \
   $K/virtio_disk.o\
+  $K/ipc.o\
   $K/asmdemo.o\
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
@@ -161,6 +162,8 @@ UPROGS=\
 	$U/_testsig\
 	$U/_sig01\
 	$U/_mem_stress\
+	$U/_semtest\
+# 	$U/_kalloctest\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

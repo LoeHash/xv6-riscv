@@ -120,7 +120,7 @@ struct proc
         // ala interval
         uint64 alarm_interval;
 
-                // the sig bit
+        // the sig bit
         uint64 sig_bits[1];
         // the sig that have to be handled
         uint64 sig_pending[1];

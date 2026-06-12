@@ -125,7 +125,9 @@ void pop_off(void);
 
 // sleeplock.c
 void acquiresleep(struct sleeplock *);
+void acquiresleep_at(struct sleeplock *lk, void *sleep_at);
 void releasesleep(struct sleeplock *);
+void releasesleep_at(struct sleeplock *lk, void *release_at);
 int holdingsleep(struct sleeplock *);
 void initsleeplock(struct sleeplock *, char *);
 
@@ -193,7 +195,5 @@ void virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x) / sizeof((x)[0]))
-
 uint64 sum_to(uint64 sum_to);
-
 void sbi_send_ipi(unsigned long hart_mask);

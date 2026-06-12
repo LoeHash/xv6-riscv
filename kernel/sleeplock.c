@@ -17,25 +17,35 @@ void initsleeplock(struct sleeplock *lk, char *name)
         lk->pid = 0;
 }
 
-void acquiresleep(struct sleeplock *lk)
+void acquiresleep_at(struct sleeplock *lk, void *sleep_at)
 {
         acquire(&lk->lk);
         while (lk->locked)
         {
-                sleep(lk, &lk->lk);
+                sleep(sleep_at, &lk->lk);
         }
         lk->locked = 1;
         lk->pid = myproc()->pid;
         release(&lk->lk);
 }
 
-void releasesleep(struct sleeplock *lk)
+void acquiresleep(struct sleeplock *lk)
+{
+        acquiresleep_at(lk, lk);
+}
+
+void releasesleep_at(struct sleeplock *lk, void *release_at)
 {
         acquire(&lk->lk);
         lk->locked = 0;
         lk->pid = 0;
-        wakeup(lk);
+        wakeup(release_at);
         release(&lk->lk);
+}
+
+void releasesleep(struct sleeplock *lk)
+{
+        releasesleep_at(lk, lk);
 }
 
 int holdingsleep(struct sleeplock *lk)

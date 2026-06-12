@@ -125,7 +125,6 @@ kalloc(void)
         acquire(&kmem.mem_lock);
         r = kmem.freelist;
 
-        // 反过来的链表
         if (r)
                 kmem.freelist = r->next;
 
@@ -134,8 +133,6 @@ kalloc(void)
         acquire(&kmem.counter_lock);
         mem_reference_counter[PA2_REFCOUN_IDX(r)]++;
         release(&kmem.counter_lock);
-
-        // printf("+ idx: %ld, ref: %d\n", PA2_REFCOUN_IDX(r), mem_reference_counter[PA2_REFCOUN_IDX(r)]);
 
         if (r)
                 memset((char *)r, 5, PGSIZE); // fill with junk

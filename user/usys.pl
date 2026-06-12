@@ -49,3 +49,6 @@ entry("sysinfo");
 entry("pgaccess");
 entry("signal");
 entry("sendsig");
+entry("sem_init");
+entry("sem_p");
+entry("sem_v");

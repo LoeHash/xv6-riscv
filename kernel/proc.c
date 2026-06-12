@@ -380,8 +380,8 @@ int kfork(void)
         }
 
         // Copy user memory from parent to child.
-        // using cow.
-        if (uvmcopy(p->pagetable, &(np->pagetable), p->sz, 1) < 0)
+        // using cow.no!
+        if (uvmcopy(p->pagetable, &(np->pagetable), p->sz, 0) < 0)
         {
                 freeproc(np);
                 release(&np->lock);

@@ -2,6 +2,7 @@
 
 struct stat;
 struct sysinfo_struct;
+struct semaphore;
 
 // system calls
 // here is for the user lib to use
@@ -32,6 +33,9 @@ int trace(long);
 int sysinfo(struct sysinfo_struct *);
 int signal(uint64, uint64);
 int sendsig(int, uint64);
+int sem_init(struct semaphore *, char *, int, int);
+int sem_p(struct semaphore *);
+int sem_v(struct semaphore *);
 
 // start, pages, result(return by bits)
 int pgaccess(uint64, uint64, uint64);

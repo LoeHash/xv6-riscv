@@ -6,6 +6,7 @@
 #include "kernel/memlayout.h"
 #include "user/user.h"
 #include "kernel/ds.h"
+#include "kernel/ipc.h"
 //
 // wrapper so that it's OK if main() does not call exit().
 //

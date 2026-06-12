@@ -1,10 +1,15 @@
-// Long-term locks for processes
+// kernel/sleeplock.h
+#ifndef _SLEEPLOCK_H_
+#define _SLEEPLOCK_H_
+
+#include "spinlock.h" // ← 必须，因为 sleeplock 内嵌了 spinlock
+
 struct sleeplock
 {
-        uint locked;        // Is the lock held?
-        struct spinlock lk; // spinlock protecting this sleep lock
-
-        // For debugging:
-        char *name; // Name of lock.
-        int pid;    // Process holding lock
+        struct spinlock lk;
+        char *name;
+        int locked;
+        int pid;
 };
+
+#endif

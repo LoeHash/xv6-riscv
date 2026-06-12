@@ -7,6 +7,7 @@
 #include "proc.h"
 #include "vm.h"
 #include "ds.h"
+#include "ipc.h"
 
 uint64
 sys_exit(void)
@@ -240,4 +241,67 @@ uint64 sys_sigreturn(void)
         *tf = save_tf;
 
         return 0;
+}
+
+///////////////////////////////////////////
+uint64 sys_sem_init(void)
+{
+        struct semaphore sem;
+        uint64 sem_addr, name_addr;
+        int step, perms;
+        char name[255];
+
+        argaddr(0, &sem_addr);
+        if (copyin(myproc()->pagetable, (char *)&sem, sem_addr, sizeof(struct semaphore)) == -1)
+        {
+                return -1;
+        }
+
+        argaddr(1, &name_addr);
+        if (copyin(myproc()->pagetable, name, name_addr, 254) == -1)
+        {
+                return -1;
+        }
+        name[254] = '\0';
+        sem.name = name;
+
+        argint(2, &step);
+        argint(3, &perms);
+
+        ksem_init(&sem, name, step, perms);
+
+        if (copyout(myproc()->pagetable, sem_addr, (char *)&sem, sizeof(struct semaphore)) == -1)
+        {
+                panic("damn!");
+        }
+
+        return 0;
+}
+
+uint64 sys_sem_p(void)
+{
+        struct semaphore sem;
+        uint64 sem_addr;
+
+        argaddr(0, &sem_addr);
+        if (copyin(myproc()->pagetable, (char *)&sem, sem_addr, sizeof(struct semaphore)) == -1)
+        {
+                return -1;
+        }
+
+        return (uint64)ksem_p(&sem, sem_addr);
+}
+
+uint64 sys_sem_v(void)
+{
+        struct semaphore sem;
+        uint64 sem_addr;
+
+        argaddr(0, &sem_addr);
+        if (copyin(myproc()->pagetable, (char *)&sem, sem_addr, sizeof(struct semaphore)) == -1)
+        {
+                return -1;
+        }
+
+        return (uint64)ksem_v(&sem, sem_addr);
 }

@@ -28,4 +28,7 @@
 #define SYS_pgaccess 26
 #define SYS_signal 27
 #define SYS_sendsig 28
-#define SYS_sigreturn 29
+#define SYS_sigreturn 29 // user not use this
+#define SYS_sem_init 30
+#define SYS_sem_p 31
+#define SYS_sem_v 32

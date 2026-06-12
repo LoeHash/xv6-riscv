@@ -107,6 +107,9 @@ extern uint64 sys_pgaccess(void);
 extern uint64 sys_signal(void);
 extern uint64 sys_sendsig(void);
 extern uint64 sys_sigreturn(void);
+extern uint64 sys_sem_init(void);
+extern uint64 sys_sem_p(void);
+extern uint64 sys_sem_v(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -140,7 +143,9 @@ static uint64 (*syscalls[])(void) = {
     [SYS_signal] sys_signal,
     [SYS_sendsig] sys_sendsig,
     [SYS_sigreturn] sys_sigreturn,
-
+    [SYS_sem_init] sys_sem_init,
+    [SYS_sem_p] sys_sem_p,
+    [SYS_sem_v] sys_sem_v,
 };
 
 void syscall(void)
